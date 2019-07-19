@@ -10,13 +10,20 @@ namespace UME
 		public bool countDown = true;
 		public int seconds = 60;
 		public int maxValue = 0;
+		public bool win = false;
+
 		private float value = 0;
+		private GameState timerState = GameState.lose;
 
 		public override void setType(){
 			boardType = UIBoardType.time;
 		}
 		// Use this for initialization
 		public override void Initialize(){
+			if(maxValue <= 0)
+				maxValue = seconds;
+			if(win)
+				timerState = GameState.win;
 			if (uiOffset != Vector2.zero)
 				uiText.GetComponentInParent<RectTransform> ().anchoredPosition = uiOffset;
 			if (uiControl != null)
@@ -24,7 +31,6 @@ namespace UME
 			maxValue = Mathf.Max (0, maxValue);
 			value = 0;
 			if (countDown) 
-				//add one for init time
 				value = Mathf.Max(0,seconds+1f);
 			UpdateText ();
 		}
@@ -41,13 +47,12 @@ namespace UME
 			UpdateValue ((float)val);
 		}
 		public override void UpdateValue(float val){
-			if (maxValue <= 0)
-				value = Mathf.Max (value + (float)val, 0.0f);
-			else
-				value = Mathf.Clamp(value + (float)val, 0.0f, (float)maxValue);
+			value = Mathf.Clamp(value + (float)val, 0.0f, (float)maxValue);
 			UpdateText ();
-			if (value <= 0 && uiControl != null)
-				uiControl.UpdateGameMessage (GameState.lose, gameObject);
+			if(countDown && value <= 0)
+				uiControl.UpdateGameMessage (timerState, gameObject);
+			else if (!countDown && value >= seconds)
+				uiControl.UpdateGameMessage (timerState, gameObject);
 		}
 	
 		public override void UpdateText () { 

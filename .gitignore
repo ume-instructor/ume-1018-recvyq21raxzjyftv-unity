@@ -5,8 +5,14 @@
 /game/[Tt]emp/
 /game/[Oo]bj/
 /game/[Bb]uild/
-/game/**/metadata/
-/game/[Uu]nityPackageManger/
+/game/[Ll]ibrary/metadata/
+/game/[Ll]ibrary/ShaderCache/
+/game/[Ll]ibrary/cache/
+/game/[Ll]ibrary/ScriptAssemblies/
+/game/[Ll]ibrary/assetDatabase*
+/game/[Ll]ibrary/*.log
+/game/[Ll]ibrary/*.db
+/game/UnityPackageManger/
 /game/**/*.stackdump
 /game/Assets/AssetStoreTools/
 /game/**/*.pidb.meta

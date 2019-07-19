@@ -4,64 +4,117 @@ using UnityEngine;
 namespace UME
 {
 	[AddComponentMenu("UME/Move/Hunt")]
-	[RequireComponent(typeof(Rigidbody2D))]
     public class Hunt : MonoBehaviour
     {
-		[SerializeField] [Range(0,50)] private float m_MaxSpeed = 10f; 
-		[SerializeField] [Range(0,100)] private float m_Attraction = 100f;
-		[SerializeField] [Range(0.0f, 5.0f)] public float checkinDistance = 0.7f;
+		[SerializeField] public LayerMask GroundLayer;
+		[SerializeField] [Range(1,5)] public float speed = 1f; 
+		[SerializeField] [Range(1,100)] private float range = 100f;
 		public GameObject targetObject;
-		private bool m_FacingRight = true;  // For determining which way the enemy is currently facing.
 		private Animator m_Anim;            // Reference to the enemy's animator component.
 		private Rigidbody2D m_Rigidbody2D;
-		private Transform target;
-		private bool noPlayer = true;
+		private Transform m_target;
+		private bool m_hitTarget = false;
+		private bool m_Grounded = true; 
+		//private bool jumping = false;
+		private Collider2D m_GroundCheck;    
+		//private bool active = false;
 
-		private void Awake(){
+    void OnDrawGizmosSelected()
+    {
+		if (this.enabled){
+        	Gizmos.color = Color.red;
+        	Gizmos.DrawWireSphere(this.transform.position, range);
+		}
+    }
+
+
+		private void Start(){
+			//active=true;
+			Transform feet = transform.Find("Feet");
+			if (feet == null){
+				feet = this.transform;
+			}
+			m_GroundCheck = feet.GetComponent<Collider2D>();
 			m_Anim = GetComponent<Animator>();
 			m_Rigidbody2D = GetComponent<Rigidbody2D>();
 			if (targetObject == null) {
 				targetObject=GameObject.FindWithTag("Player");
 			}
 			if (targetObject != null) {
-				target = targetObject.transform;
-				noPlayer = false;
+				m_target = targetObject.transform;
 			} 
+			GroundCheck();
+			if (m_Anim) {
+				m_Anim.SetBool ("Ground", m_Grounded);
+			}
+		}
+		private void OnCollisionEnter2D(Collision2D other){
+			if (other.gameObject == m_target.gameObject)
+				m_hitTarget = true;
+			
+		}
+		private void OnCollisionExit2D(Collision2D other){
+			if (other.gameObject == m_target.gameObject)
+				m_hitTarget = false;
+			
 		}
 		// Update is called once per frame
         private void FixedUpdate()
 		{	
-			if (noPlayer) return;
-
-			float distance = (target.position.x - transform.position.x);
-			float active = 0;
-			Vector3 move = Vector3.zero;
-			m_Rigidbody2D.velocity = new Vector2(0.0f, 0.0f);
-			if (Mathf.Abs(distance) <= m_Attraction && Mathf.Abs(distance) >= checkinDistance)
-				active = Mathf.Sign (distance);
-			if (active != 0) {
-				m_Rigidbody2D.velocity = new Vector2(active*m_MaxSpeed, m_Rigidbody2D.velocity.y);
-				if (m_Anim != null) {
-					m_Anim.SetBool ("Ground", true);
-					m_Anim.SetFloat ("vSpeed", m_Rigidbody2D.velocity.y);
-					m_Anim.SetFloat ("Speed", Mathf.Abs (active * m_MaxSpeed * .03f));
+			GroundCheck();
+			float anim_speed = 0.0f;
+			if (m_target != null && !m_hitTarget) {
+				// check for arrival
+				float distance = Vector3.Distance (this.transform.position, m_target.position);
+				if( distance <= range) {
+					HuntTarget();
+				anim_speed = (speed+1.0f)*.08f;
 				}
-				if (active > 0 && !m_FacingRight)
-					Flip ();
-				else if (active < 0 && m_FacingRight)
-					Flip ();
-			
+			}
+			if (m_Anim != null){			
+				try{
+					m_Anim.SetBool("Ground", m_Grounded);
+					m_Anim.SetFloat("Speed", anim_speed);
+				}
+				catch{
+				}
+			}
+
+		}
+		private void HuntTarget(){
+
+			Vector2 m_target2d = new Vector2(m_target.position.x,m_target.position.y);
+			Vector2 m_position2d = new Vector2(this.transform.position.x, this.transform.position.y);
+			Vector2 force;
+			// update position
+			if (m_Rigidbody2D != null){
+				float hunt_force = speed*m_Rigidbody2D.mass*20*speed;
+				float hunt_jump = m_Rigidbody2D.mass*1500;
+
+				force = (m_target2d - m_Rigidbody2D.position).normalized;
+				force.x*=hunt_force;
+				
+				if(m_Grounded){
+					force.y = Mathf.Max(0.0f,force.y);
+					force.y*=hunt_jump;
+				}else{
+					force.y = 0.0f;
+				}
+
+				m_Rigidbody2D.AddForce(force);
+			}else{
+				force = Vector2.MoveTowards (m_position2d, m_target2d, speed);
+				this.transform.position = force;
 			}
 		}
-		private void Flip()
-		{
-			// Switch the way the player is labelled as facing.
-			m_FacingRight = !m_FacingRight;
-			
-			// Multiply the player's x local scale by -1.
-			Vector3 theScale = transform.localScale;
-			theScale.x *= -1;
-			transform.localScale = theScale;
+
+		private void GroundCheck(){
+			if (m_GroundCheck != null) {
+				m_Grounded=false;
+				Collider2D[] colliders = Physics2D.OverlapAreaAll(m_GroundCheck.bounds.max, m_GroundCheck.bounds.min, GroundLayer);
+				if(colliders.Length>0)
+					m_Grounded = true;
+			}
 		}
 	}
 }

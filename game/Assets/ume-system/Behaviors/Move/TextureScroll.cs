@@ -13,7 +13,7 @@ namespace UME
 		public bool scrollV = true;
 
 
-		[Range(-5.0f, 5.0f)] public float scrollRate = .001f;
+		[Range(-0.1f, 0.10f)] public float scrollRate = .001f;
 		private string textureName =  "_MainTex";
 		private Vector2 driver;
 		private void Awake(){

@@ -3,7 +3,13 @@ using System.Collections;
 using UnityEngine.UI;
 
 namespace UME{
-
+	public enum UIBoardType
+	{
+		score,
+		health,
+		time,
+		message,
+	}
     [RequireComponent(typeof(Canvas))]
     [RequireComponent(typeof(CanvasScaler))]
     [RequireComponent(typeof(CanvasRenderer))]

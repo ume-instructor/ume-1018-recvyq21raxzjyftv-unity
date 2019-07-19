@@ -1,37 +1,35 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-
+using System;
 
 namespace UME
 {
     [AddComponentMenu("UME/Triggers/TeleportTrigger")]
-    public class TeleportTrigger : MonoBehaviour {
+    [Serializable]
+    public class TeleportTrigger : BaseTrigger {
 		
-		public GameObject[] teleportLocation; 
-		[SerializeField] [Range(0f,5f)] public float teleportDelay=5.0f;
-		public string triggerTag = "Player";
+		public GameObject[] teleportLocation = new GameObject[1]; 
+		[Range(0f,5f)] public float teleportDelay=0f;
 		public bool x = true;
 		public bool y = true;
 		bool hideTarget = false;
 
-		//private Queue<GameObject> teleObjects;
 		private List<Timer> teleObjects = new List<Timer>();
 
-		//System.Collections.Stack
-
 		// Use this for initialization
-		void Start(){
+		public override void Initialize(){
 			if (hideTarget) {
 				// hide target sprites
 				foreach (GameObject obj in teleportLocation) {
-					obj.GetComponent<SpriteRenderer> ().enabled = false;
+					var sprite = obj.GetComponent<SpriteRenderer> ();
+					if (sprite != null) {sprite.enabled = false;}
 				}
 			}
 
 		}
 
-		void Update(){
+		void FixedUpdate(){
 			//list store items to be deleted
 			List<Timer> teleported = new List<Timer> ();
 
@@ -46,40 +44,35 @@ namespace UME
 						Debug.Log("Teleport Exit: " + m_timer.Target.name);
 					}
 					//store index for deferred removal outside of enumeration
-
 					teleported.Add(m_timer);
 				}
 
 			}
 			//clean up
-
 			foreach (Timer m_timer in teleported) {
 					teleObjects.Remove(m_timer);
 			}
 
 		}
 
-		void OnTriggerEnter2D (Collider2D other)
+		public override void Activate(Collider2D other)
 		{
-			if (other.tag.ToLower () == "untagged") {return;}
-			if(other.tag.ToLower() == triggerTag.ToLower() || (triggerTag.ToLower() == "all" )){
 				if (other.gameObject.transform.parent == null) {
 					//deactivate object
 					Timer m_timer = ScriptableObject.CreateInstance<Timer>();
 					m_timer.Clock = teleportDelay;
 					m_timer.Target = other.gameObject;
 					m_timer.Target.SetActive (false);
-					Debug.Log ("Teleport Enter: " + other.gameObject.name);
 					//store in list
 					teleObjects.Add (m_timer);
 				}
-			}
+			
 		}
 
 		void teleportGameObject(GameObject obj){
 			int spawnPointIndex = 0;
 			if (teleportLocation.Length > 1) {
-				spawnPointIndex = Random.Range (0, teleportLocation.Length);
+				spawnPointIndex = UnityEngine.Random.Range (0, teleportLocation.Length);
 			}
 			if (obj != null) {
 				Vector3 tpos = teleportLocation [spawnPointIndex].transform.position;

@@ -3,11 +3,11 @@ using System.Collections;
 namespace UME{
 
     [AddComponentMenu("UME/Utility/HideSprite")]
-    public class HideSprite : BaseTrigger
+    public class HideSprite : MonoBehaviour
 	{
 
 		// Use this for initialization
-		public override void Initialize ()
+		void Start ()
 		{
 			GetComponent<SpriteRenderer>().enabled = false;
 		}

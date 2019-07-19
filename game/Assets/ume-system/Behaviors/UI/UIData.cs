@@ -15,18 +15,18 @@ namespace UME{
 		protected Canvas uiCanvas;
 		protected UIBoardType boardType;
 		// Use this for initialization
-		void Start () {
+		void Awake () {
 			setType ();
 			//resolve global UIControl and add to global list of UIBoards
 			if (uiControl == null) {
 				uiControl = FindObjectOfType<UIControl> ();
 			}
 
-			if (uiControl == null) {
-				GameObject obj = Instantiate (Resources.Load("UIControl")) as GameObject;
-				obj.name = "UIControl";
-				uiControl = FindObjectOfType<UIControl> ();
-			}
+			// if (uiControl == null) {
+			// 	GameObject obj = Instantiate (Resources.Load("UIControl")) as GameObject;
+			// 	obj.name = "UIControl";
+			// 	uiControl = FindObjectOfType<UIControl> ();
+			// }
 
 			if (uiText == null) {
 				foreach ( UIBoard board in GetComponentsInChildren<UIBoard> ()) {

@@ -1,25 +1,38 @@
-﻿using System.Collections;
+﻿
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace UME {
 	public class Fly : BaseAbility {
 
-		public float flyForce;
-		public float maxSpeed;
 		// Use this for initialization
 		private Rigidbody2D m_Rigidbody2D;
+		private Animator m_Anim;  
 		public override void Initialize(){
-			m_Rigidbody2D = GetComponent<Rigidbody2D> ();
+			m_Rigidbody2D = GetComponent<Rigidbody2D> ();			
+			m_Anim = GetComponent<Animator>();
+			if (m_Anim) {
+				m_Anim.SetBool ("Ground", true);
+			}
 		}
-		// Update is called once per frame
-		public override void Activate () {
-			if (m_Rigidbody2D) {
+		void FixedUpdate () { 
+			CheckBurnDown();
+			if (m_Anim) {
+				m_Anim.SetFloat ("Speed", (float)Math.Abs(m_Rigidbody2D.velocity.x));
+			}
+			GetKey();
+		}
+
+		public override void Activate() {
+			if (m_Rigidbody2D && abilityEnabled) {
 				m_Rigidbody2D.velocity = new Vector2 (m_Rigidbody2D.velocity.x, Mathf.Max (m_Rigidbody2D.velocity.y, 0f));
-				m_Rigidbody2D.AddForce (new Vector2 (0f, flyForce));
-				m_Rigidbody2D.velocity = new Vector2(m_Rigidbody2D.velocity.x, Mathf.Clamp(m_Rigidbody2D.velocity.y,0,maxSpeed));
+				m_Rigidbody2D.AddForce (new Vector2 (0f, force));
+				m_Rigidbody2D.velocity = new Vector2(m_Rigidbody2D.velocity.x, Mathf.Clamp(m_Rigidbody2D.velocity.y,0, speed));
 			}
 
 		}
+
 	}
 }

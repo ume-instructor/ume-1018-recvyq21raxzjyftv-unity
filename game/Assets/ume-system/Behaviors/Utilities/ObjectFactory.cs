@@ -17,7 +17,23 @@ namespace UME
 		[HideInInspector]public AudioSource audioSrc;
 
 	    private float spawnTime;
-
+		void OnDrawGizmosSelected()
+		{
+			if (this.enabled){
+				Vector2 direction = Vector2.right;
+				if (vertical){
+					direction = Vector2.up;
+				}
+				float flip_val = -1.0f;
+				if (flip) {
+					flip_val = 1.0f;
+				}
+				direction.y *= this.transform.localScale.y*flip_val;
+				direction.x *= this.transform.localScale.x*flip_val;
+				Gizmos.color = Color.blue;
+				Gizmos.DrawRay(this.transform.position, direction.normalized*3);
+			}
+		}
 		//Initialization
 		void Start(){
 			spawnTime = spawnDelay;
@@ -67,7 +83,6 @@ namespace UME
 				
 				//randomSpread
 				float degree = Random.Range (-90.0f, 90.0f) * randomSpread;
-				
 				// cardinal direction
 				Vector2 direction = Vector2.right;
 				if (vertical){
@@ -76,7 +91,8 @@ namespace UME
 
 				//rotated direction
 				direction = Quaternion.Euler(0, 0, degree) * direction;
-				
+				direction.y *= this.transform.localScale.y;
+				direction.x *= this.transform.localScale.x;
 				//flip
 				float flip_val = -1.0f;
 				if (flip) {
@@ -88,7 +104,7 @@ namespace UME
 				
 				//apply force to rigidbody
 				if (obj.GetComponent<Rigidbody2D> () != null){
-					obj.GetComponent<Rigidbody2D> ().AddRelativeForce (direction*flip_val*force);
+					obj.GetComponent<Rigidbody2D> ().AddRelativeForce (direction.normalized*flip_val*force);
 					obj.transform.Rotate (direction);
 				}
 				

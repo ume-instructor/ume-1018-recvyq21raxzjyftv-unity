@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace UME {
+		public enum AbilityTriggerType
+	{
+		Fly,
+		Invincible
+	}
 	public class AbilityTrigger : BaseTrigger {
 		
 		public AbilityTriggerType type;

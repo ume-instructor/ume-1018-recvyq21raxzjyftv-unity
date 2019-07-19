@@ -4,37 +4,25 @@ using System;
 namespace UME
 {
 	[AddComponentMenu("UME/Control/KeyRotate")]
+	[RequireComponent(typeof(Rigidbody2D))]
 	[Serializable]
-	public class KeyRotate : MonoBehaviour {
-		public KeyCode Key;
+	public class KeyRotate : BaseKey {
 		public float torque = 0;
 		public float maxVelocity = 10f; 
 
 		private Rigidbody2D m_rigidbody;
 		private Animator m_Anim;          
 
-		void Start () {
+		public override void Initialize () {
 			m_rigidbody = gameObject.GetComponent<Rigidbody2D> ();
-			m_Anim = GetComponent<Animator>();			
-			if (m_Anim) {
-				m_Anim.SetBool ("Ground", true);
-			}
 		}
-
-
-		void FixedUpdate () { 
-			/*
-			if (m_Anim) {
-				
-				m_Anim.SetFloat ("Rotate", (float)Math.Abs(m_rigidbody.angularVelocity));
-			}
-			*/
-			// Key Detection and Management
-			if (Input.GetKey (Key)) {
-				if (m_rigidbody && m_rigidbody.angularVelocity < maxVelocity) 
-					m_rigidbody.AddTorque (torque);
+		void FixedUpdate () {
+			GetKey(); 
 		}
-	}
+		public override void Activate(){
+			if (m_rigidbody && m_rigidbody.angularVelocity < maxVelocity) 
+				m_rigidbody.AddTorque (torque);
+		}
 
 	}
 } 

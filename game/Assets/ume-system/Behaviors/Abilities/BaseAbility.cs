@@ -5,25 +5,27 @@ using UnityEngine;
 
 namespace UME {
 	
-	public class BaseAbility : MonoBehaviour {
+	public class BaseAbility : BaseKey {
 	
-		public KeyCode key;
 		[HideInInspector]
 		public float duration;
+		[HideInInspector]
+		public float force;
+		[HideInInspector]
+		public float speed;
 
-		void Start () {
-			Initialize ();
-		}
-		
+		[HideInInspector]
+		public bool abilityEnabled = false;
+		[HideInInspector]
+
 		// Update is called once per frame
-		void FixedUpdate () {
-			if (Input.GetKey(key) && duration > 0) {
-				Activate();
+		public void CheckBurnDown () {
+			abilityEnabled=false;
+			if (duration > 0) {
+				abilityEnabled=true;
 				duration--;
 			}
 		}
-		public virtual void Initialize(){}
-		public virtual void Activate(){}
 	}
 
 }

@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Library/experiment.unity
+- path: Assets/challenge 1.unity
   isLoaded: 1
   isActive: 1

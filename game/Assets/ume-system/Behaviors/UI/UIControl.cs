@@ -9,105 +9,104 @@ using System;
 namespace UME
 {
 	[RequireComponent(typeof (Canvas))]
+	[Serializable]
 	public class UIControl : MonoBehaviour
 	{
 		[HideInInspector]
 		public List<GameMessage> MessageBoards = new List<GameMessage>();
 		[HideInInspector]
 		public List<UIData> UIDataSources = new List<UIData>();
-		//private Canvas m_Canvas;
 
-		private bool startBtn = false;
-		private bool pauseBtn = false;
-		private bool continueBtn = false;
-		private bool restartBtn = false;
-
+		public BaseKey select;
+		public BaseKey start;
+		private Controller m_Controller;
 		private bool canContinue = false;
-		private bool pause = false;
-		private bool play = true;
-		private bool start = true;
-		private bool stop = false;
-		float delayTimer = 0f;
+		private bool play = false;
+		private bool starting = true;
+
 		// Use this for initialization
+		
+		void Awake(){
+			m_Controller = FindObjectOfType<Controller> ();
+		}
 		void Start()
 		{
+			var start_key = string.Format("{0}",start.Key);
+			var select_key =string.Format("{0}",select.Key);
+			if (start.Key == KeyCode.Return)
+				start_key = "Enter";
+			
+			if (select.Key == KeyCode.Return)
+				select_key = "Enter";
 
+			start.onActivate += PlayLevel;
+			select.onActivate += PlayNextLevel;
+			starting=true;
 			for(int i=0; i < MessageBoards.Count; i++) {
-				Time.timeScale = 0;
-				string options = "\n\npress <s> to start..\n";
+				string options = string.Format("\n\nPlay <{0}>", start_key);
+				if(m_Controller != null)
+					options = "\n\n[start]";
 				MessageBoards[i].UpdateValue (GameState.start, options, null);
 			}
 
+			
+			Time.timeScale = 0;
+			
+		}
+		void OnDestroy() {
+			start.onActivate -= PlayLevel;
+			select.onActivate -= PlayNextLevel;	
 		}
 
 
 		// Update is called once per frame
 		void Update ()
 		{
-			delayTimer -= Time.deltaTime;
-			
-			pauseBtn = Input.GetKeyDown ("p");
-			if (start) {
-				startBtn = Input.GetKeyDown ("s");
-			}
-			if ( play == false) {
-				restartBtn = Input.GetKeyDown ("r");
-				continueBtn = Input.GetKeyDown ("c");
-			}
-
-			if (pauseBtn){
-				pause = !pause;
-				if (pause == true){
-					DisplayMessage("Pause <p>");
-					Time.timeScale = 0;
-					play = false;
-					stop = false;
-				}
-				if (pause == false){
-					DisplayMessage("");
-					Time.timeScale = 1;
-					play = true;
-					stop = false;
-				}
-			}
-
-			if (continueBtn && canContinue){
-				DisplayMessage("");
-
-				int next_level_idx = SceneManager.GetActiveScene().buildIndex+1;
-				if (next_level_idx < SceneManager.sceneCountInBuildSettings) {
-					SceneManager.LoadScene (next_level_idx);
-				} else {
-					SceneManager.LoadScene (0);
-				}
-				Time.timeScale = 1;
-				play = true;
-				stop = false;
-			}
-
-			if (restartBtn || startBtn ){
-				DisplayMessage("");
-				play=true;
-				start=false;
-				stop = false;
-
-				if (restartBtn)
-					SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-
-				
-				Time.timeScale=1;
-
-			}
-			if (stop && delayTimer < 0) {
-				Time.timeScale = 0;
-			}
-			startBtn = false;
-			pauseBtn = false;
-			continueBtn = false;
-			restartBtn = false;
-			//quitBtn = false;
+			start.GetKeyDown();
+			select.GetKeyDown();
 		}
 
+		public void PlayNextLevel(){
+			if(canContinue){
+				int level_idx = SceneManager.GetActiveScene().buildIndex+1;
+				level_idx = level_idx < SceneManager.sceneCountInBuildSettings ? level_idx : 0;
+				SceneManager.LoadScene (level_idx);
+				play=true;
+				DisplayMessage("");
+				Time.timeScale=1;
+			}
+		}
+		public void PlayLevel(){
+			int level_idx = 0;
+			//pause
+			if (play){
+				DisplayMessage("PAUSE...");
+				play=false;
+				starting=true;
+				Time.timeScale=0;
+			}
+			else if (!play){
+				
+				//restart
+				if (!starting){
+					level_idx = SceneManager.GetActiveScene().buildIndex;
+					SceneManager.LoadScene (level_idx);
+					play=true;
+					DisplayMessage("");
+					Time.timeScale=1;
+				}
+				//start
+				else if(starting){
+					starting=false;
+					play=true;
+					DisplayMessage("");
+					Time.timeScale=1;
+				}
+				
+			
+
+			}
+		}
 
 		public void UpdateState(UITriggerType type, string value, float duration,  GameObject target=null){
 
@@ -118,8 +117,8 @@ namespace UME
 				break;
 			case UITriggerType.lose:
 				if (m_anim) {
-					m_anim.SetBool ("Death", true);
-					delayTimer = m_anim.GetCurrentAnimatorClipInfo (0) [0].clip.length;
+					m_anim.SetTrigger ("Die");//.SetBool ("Die", true);
+					//delayTimer = m_anim.GetCurrentAnimatorClipInfo (0) [0].clip.length;
 					if (target.GetComponent<Rigidbody2D> () != null)
 						//target.GetComponent<Rigidbody2D> ().velocity = new Vector2(0f,0f);
 						target.GetComponent<Rigidbody2D> ().constraints = RigidbodyConstraints2D.FreezeAll;
@@ -134,26 +133,33 @@ namespace UME
 				break;
 
 			case UITriggerType.time:
-				if ((float)Int32.Parse (value) > 0)
-					m_anim.SetBool ("Happy", true);
-				else
-					m_anim.SetBool ("Sad", false);
+
+				if (m_anim) {
+					if ((float)Int32.Parse (value) > 0)
+						m_anim.SetTrigger("Happy");
+					else
+						m_anim.SetTrigger("Sad");
+				}
 				UpdateBoard (type, value, target);
 				break;
 				
 			case UITriggerType.score:
-				if (Int32.Parse (value) > 0)
-					m_anim.SetBool ("Happy", true);
-				else
-					m_anim.SetBool ("Sad", false);
+				if (m_anim) {
+					if (Int32.Parse (value) > 0)
+						m_anim.SetTrigger("Happy");
+					else
+						m_anim.SetTrigger("Sad");
+				}
 				UpdateBoard (type, value, target);
 				break;
 
 			case UITriggerType.health:
-				if (Int32.Parse (value) > 0)
-					m_anim.SetBool ("Happy", true);
-				else
-					m_anim.SetBool ("Sad", false);
+				if (m_anim) {
+					if (Int32.Parse (value) > 0)
+						m_anim.SetTrigger("Happy");
+					else
+						m_anim.SetTrigger("Sad");
+				}
 				UpdateBoard (type, value, target);
 				break;
 
@@ -220,27 +226,45 @@ namespace UME
 
 		public void UpdateGameMessage(GameState state, GameObject target = null, string value = null){
 			//TODO: make this parent specific? Let other players keep playing
-
+			var start_key = string.Format("{0}",start.Key);
+			var select_key =string.Format("{0}",select.Key);
+			if (start.Key == KeyCode.Return)
+				start_key = "Enter";
+			
+			if (select.Key == KeyCode.Return)
+				select_key = "Enter";
+			
 			string options = "";
 			switch (state) 
 			{
 			case GameState.lose:
-				stop = true;
-				options = "\n===========\nrestart <r>";
+				
+
+				options = string.Format("\n===========\nReplay < {0} >", start_key);
+				if(m_Controller != null)
+					options = "\n===========\nReplay [start]";
+				canContinue=false;
 				play = false;
+				Time.timeScale = 0;
 				break;
 
 			case GameState.win:
-				stop = true;
 				int currentIndex = SceneManager.GetActiveScene ().buildIndex;
 				int build_count = SceneManager.sceneCountInBuildSettings;
 				options = "\n===========\n";			
 				if (currentIndex + 1 < build_count) {
-					options += "continue <c>\n";
 					canContinue = true;
+					options += string.Format("Next level < {0} >\n", select_key);
+					if(m_Controller != null)
+						options = "Next level [select]";
 				}
-				options += "replay <r>\n";
+
+				if(m_Controller != null)
+					options = "Replay [start]";
+				else
+					options += string.Format("Replay < {0} >\n", start_key);
 				play = false;
+				Time.timeScale = 0;
 				break;
 
 			}

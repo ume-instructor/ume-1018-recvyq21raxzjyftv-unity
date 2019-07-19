@@ -1,53 +1,44 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 using System.Collections;
 using System;
 namespace UME
 {
     [AddComponentMenu("UME/Control/KeyForce")]
+	[RequireComponent(typeof(Rigidbody2D))]
 	[Serializable]
-	public class KeyForce : MonoBehaviour {
-		public KeyCode Key;
+	public class KeyForce : BaseKey{
 		public Vector2 force = Vector2.zero;
 		public float maxVelocity = 10f ;
 		private Rigidbody2D m_rigidbody;
 		private Animator m_Anim;          
-
-		void Start () {
+		private Vector2 applyForce;
+		//private Vector2 speed = Vector2.zero;
+		public override void Initialize () {
 			m_rigidbody = gameObject.GetComponent<Rigidbody2D> ();
 			m_Anim = GetComponent<Animator>();
 			if (m_Anim) {
 				m_Anim.SetBool ("Ground", true);
+				m_Anim.SetFloat ("Speed", 0.0f);
 			}
 		}
 
-
-
-		void FixedUpdate () { 
-			Vector2 applyForce = Vector2.zero;
-
+		// void Update () {
+		// 	GetKey();
+		// }
+		void FixedUpdate() {
+			GetKey();
 			if (m_Anim) {
-				m_Anim.SetFloat ("Speed", (float)Math.Abs(m_rigidbody.velocity.x));
-
-			}
-			// Key Detection and Management
-			if (Input.GetKey (Key)) {
-				if (m_rigidbody){
-					if (Math.Sign (force.x) > 0f && m_rigidbody.velocity.x < maxVelocity) 
-						applyForce.x = force.x;
-					if (Math.Sign (force.x) < 0f && m_rigidbody.velocity.x > Math.Sign(force.x)*maxVelocity) 
-						applyForce.x = force.x;
-					if (Math.Sign (force.y) > 0f && m_rigidbody.velocity.y < maxVelocity)
-						applyForce.y = force.y;
-					if (Math.Sign (force.y) < 0f && m_rigidbody.velocity.y > Math.Sign(force.y)*maxVelocity) 
-						applyForce.y = force.y;
-					
-					m_rigidbody.AddForce (applyForce);
-
+				m_Anim.SetFloat ("Speed",  (float)(Mathf.Abs(m_rigidbody.velocity.x)));
+				m_Anim.SetFloat ("vSpeed",  (float)(Mathf.Abs(m_rigidbody.velocity.y)));
 				}
+		}
+		public override void Activate(){
+			if (m_rigidbody){
+				m_rigidbody.AddForce (force);
+				m_rigidbody.velocity = new Vector2(Mathf.Clamp(m_rigidbody.velocity.x,-maxVelocity,maxVelocity),Mathf.Clamp(m_rigidbody.velocity.y,-maxVelocity,maxVelocity));
 
 			}
-
-
 		}
 	}
 } 

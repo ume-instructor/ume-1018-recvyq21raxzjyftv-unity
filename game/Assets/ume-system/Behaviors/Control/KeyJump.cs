@@ -4,27 +4,23 @@ using UnityEngine;
 
 namespace UME{
 	[AddComponentMenu("UME/Control/KeyJump")]
-	public class KeyJump : MonoBehaviour {
+	[RequireComponent(typeof(Rigidbody2D))]
+	public class KeyJump : BaseKey {
 
-		[SerializeField] public LayerMask GroundLayer; 
-		public KeyCode jumpKey = KeyCode.Space;
-
+		[SerializeField] public LayerMask GroundLayers; 
 		[SerializeField] public float m_JumpForce = 50f;  
 		[SerializeField][Range(0.1f,0.5f)]public float JumpDuration = 0.1f;
-		[SerializeField]public bool doubleJump = false;
 
+		[SerializeField]
+		[HideInInspector]
+		public bool doubleJump = false;
 
 		private bool m_Grounded = true; 
-		private Transform m_GroundCheck;    
-		private float k_GroundedRadius = .25f;
-
-
+		private Collider2D m_GroundCheck;    
 		private bool canJump = true;
 		private bool jumping = true;
 		private int jumpMax = 1;
 		private int jumpCount;
-
-
 		private float jump_duration;
 		private float accumJumpForce;
 		private Animator m_Anim;           
@@ -32,45 +28,36 @@ namespace UME{
 
 
 		// Use this for initialization
-		void Start () {
+		public override void Initialize () {
 			
-			m_GroundCheck = transform.Find("Feet");
-			//build GroundCheck from collider
-			if (!m_GroundCheck) {
-				m_GroundCheck = GetComponent<Collider2D>().transform;
-				k_GroundedRadius += GetComponent<Collider2D>().bounds.extents.y;
+			Transform feet = transform.Find("Feet");
+			if (feet == null){
+				feet = this.transform;
 			}
+			m_GroundCheck = feet.GetComponent<Collider2D>();
 			m_Anim = GetComponent<Animator>();
 			m_Rigidbody2D = GetComponent<Rigidbody2D>();
 			jump_duration = JumpDuration;
 			accumJumpForce = 0f;
+			GroundCheck();
 			if (m_Anim) {
 				m_Anim.SetBool ("Ground", m_Grounded);
 			}
-
-		
 		}
-
-		
-
-
-		void FixedUpdate(){
+		// void Update(){
+		// 	GetKey();
+		// }
+		void FixedUpdate() {
+			GetKey();
 			GroundCheck ();
-			//doublejump
-			if (Input.GetKeyDown (jumpKey)) {
-				//force button reset
-				canJump = true;
-				if (doubleJump && !m_Grounded && jumping && jumpCount < jumpMax) {
-					jumpCount++;
-					jump_duration = 0f;
-					// if falling (- y velocity) set vertical velocity to 0
-					m_Rigidbody2D.velocity = new Vector2(m_Rigidbody2D.velocity.x, Mathf.Max(m_Rigidbody2D.velocity.y,0f));
-					// add the rest of the accumforce
-					m_Rigidbody2D.AddForce (new Vector2 (0f, (float)accumJumpForce*4.0f));
+			if (m_Anim) {
+					m_Anim.SetBool ("Ground", m_Grounded);
+					m_Anim.SetFloat ("vSpeed", m_Rigidbody2D.velocity.y);
 				}
-			}
+		}
+		public override void Activate(){
 			//jump
-			if (Input.GetKey (jumpKey) && canJump) {
+			if (canJump) {
 				m_Grounded = false;
 				gameObject.transform.parent = null;
 				jump_duration -= Time.fixedDeltaTime;
@@ -87,29 +74,29 @@ namespace UME{
 				}
 
 			}
-			if (m_Anim) {
-				m_Anim.SetBool ("Ground", m_Grounded);
-				m_Anim.SetFloat ("vSpeed", m_Rigidbody2D.velocity.y);
+			else{
+				//force button reset
+				canJump = true;
+				if (doubleJump && !m_Grounded && jumping && jumpCount < jumpMax) {
+					jumpCount++;
+					jump_duration = 0f;
+					// if falling (- y velocity) set vertical velocity to 0
+					m_Rigidbody2D.velocity = new Vector2(m_Rigidbody2D.velocity.x, Mathf.Max(m_Rigidbody2D.velocity.y,0f));
+					// add the rest of the accumforce
+					m_Rigidbody2D.AddForce (new Vector2 (0f, (float)accumJumpForce*4.0f));
+				}
 			}
-
-		
 		}
 
-
-		//use ground check
 		private void GroundCheck(){
 			if (m_GroundCheck != null) {
-				Collider2D[] colliders = Physics2D.OverlapCircleAll (m_GroundCheck.position, k_GroundedRadius, GroundLayer);
-				for (int i = 0; i < colliders.Length; i++) {
-					if (colliders [i].gameObject != gameObject) {
-						m_Grounded = true;
-						jump_duration = JumpDuration;
-						jumpCount = 0;
-						jumping = false;
-						accumJumpForce = 0f;
-
-					}
-
+				Collider2D[] colliders = Physics2D.OverlapAreaAll(m_GroundCheck.bounds.max, m_GroundCheck.bounds.min, GroundLayers);
+				if(colliders.Length>0){
+					m_Grounded = true;
+					jump_duration = JumpDuration;
+					jumpCount = 0;
+					jumping = false;
+					accumJumpForce = 0f;
 				}
 			}
 		}

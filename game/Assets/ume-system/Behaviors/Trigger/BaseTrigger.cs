@@ -3,23 +3,20 @@ using UnityEngine;
 
 namespace UME
 {
-	
+
+	public class TagSelectorAttribute : PropertyAttribute
+    {
+        public bool UseDefaultTagFieldDrawer = false;
+    }
+
+ 	[Serializable]
 	public class BaseTrigger : MonoBehaviour
 	{
-		public string activate = "All";
-
+		[TagSelector]
+		public string activate;
 		protected bool m_inTrigger = false;
-		protected UIControl uiControl; 
-
 		void Start()
 		{
-
-			uiControl = FindObjectOfType<UIControl> ();
-			if (uiControl == null) {
-					GameObject obj = Instantiate (Resources.Load("UIControl")) as GameObject;
-					obj.name = "UIControl";
-				uiControl = obj.GetComponent<UIControl> ();
-			}
 			Initialize ();
 		}
 		private void OnTriggerEnter2D(Collider2D other)
